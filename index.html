@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>AjoLista 2.1</title>
+<style>
+:root{
+  --bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;
+  --accent:#0f172a;--accentText:#fff;--good:#166534;--goodBg:#dcfce7;
+  --warn:#92400e;--warnBg:#fef3c7;--danger:#991b1b;--dangerBg:#fee2e2;
+}
+body.dark{
+  --bg:#0b1220;--card:#111827;--text:#f9fafb;--muted:#9ca3af;--line:#263244;
+  --accent:#f8fafc;--accentText:#0f172a;--good:#86efac;--goodBg:#123524;
+  --warn:#fcd34d;--warnBg:#3a2b0d;--danger:#fecaca;--dangerBg:#3a1414;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,textarea,select{font:inherit}
+header{
+  position:sticky;top:0;z-index:10;background:var(--accent);color:var(--accentText);
+  padding:calc(10px + env(safe-area-inset-top)) 14px 12px;
+}
+.topbar{max-width:700px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-size:22px;font-weight:900;letter-spacing:-.3px}
+.top-actions{display:flex;gap:8px}
+.iconbtn{border:0;border-radius:12px;padding:10px 12px;background:color-mix(in srgb,var(--accentText) 14%,transparent);color:var(--accentText);font-weight:800}
+.datebar{max-width:700px;margin:10px auto 0;display:grid;grid-template-columns:48px 1fr 48px;gap:8px;align-items:center}
+.datecenter{text-align:center}
+.dayname{font-size:18px;font-weight:900}
+.fulldate{font-size:12px;opacity:.8;margin-top:2px}
+.navbtn{border:0;border-radius:12px;padding:10px;background:color-mix(in srgb,var(--accentText) 14%,transparent);color:var(--accentText);font-size:20px}
+.todaybtn{display:block;margin:8px auto 0;border:0;background:transparent;color:var(--accentText);opacity:.85;font-weight:800}
+main{max-width:700px;margin:auto;padding:12px 12px 110px}
+.next-wrap{margin-bottom:14px}
+.label{font-size:12px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin:8px 3px}
+.next-card{
+  background:var(--card);border:2px solid var(--accent);border-radius:18px;padding:16px;
+  box-shadow:0 4px 18px #00000012;
+}
+.next-card .time{font-size:34px}
+.time{font-size:24px;font-weight:900;letter-spacing:-.5px}
+.name{font-size:18px;font-weight:850;margin-top:2px}
+.route{font-size:15px;margin-top:6px;line-height:1.35}
+.note{font-size:14px;color:var(--muted);margin-top:7px;white-space:pre-wrap}
+.badge{display:inline-block;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:900;margin-top:8px;background:var(--warnBg);color:var(--warn)}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.pill{background:var(--card);border:1px solid var(--line);padding:7px 10px;border-radius:999px;font-size:12px;font-weight:800;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.card.done-card{opacity:.58}
+.rowhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.btn{border:0;border-radius:11px;padding:10px 12px;font-weight:850;background:var(--line);color:var(--text)}
+.btn.primary{background:var(--accent);color:var(--accentText)}
+.btn.good{background:var(--goodBg);color:var(--good)}
+.btn.warn{background:var(--warnBg);color:var(--warn)}
+.btn.danger{background:var(--dangerBg);color:var(--danger)}
+.empty{text-align:center;color:var(--muted);padding:38px 20px}
+.empty .emoji{font-size:44px}
+.fab{
+  position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:12;
+  max-width:676px;margin:auto;border:0;border-radius:16px;padding:16px;background:var(--accent);
+  color:var(--accentText);font-size:17px;font-weight:900;box-shadow:0 8px 25px #0004;
+}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;z-index:20}
+.sheet{
+  width:100%;max-width:700px;margin:auto;background:var(--card);border-radius:22px 22px 0 0;
+  padding:18px 16px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;color:var(--text)
+}
+.sheet h2{margin:0 0 6px}
+.sheet p.help{margin:0 0 10px;color:var(--muted);font-size:13px}
+label{display:block;font-size:12px;font-weight:900;margin:12px 0 5px;color:var(--muted);text-transform:uppercase}
+input,textarea,select{width:100%;padding:13px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:12px}
+textarea{min-height:82px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+.modal-actions button{padding:14px;border:0;border-radius:12px;font-weight:900}
+.section-title{font-size:13px;font-weight:900;margin:18px 3px 8px;color:var(--muted);text-transform:uppercase}
+.settings-grid{display:grid;gap:10px}
+.setting-card{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:13px}
+.setting-card strong{display:block;margin-bottom:4px}
+.small{font-size:12px;color:var(--muted)}
+input[type=file]{padding:10px}
+
+/* Kalenteri */
+.calendar-head{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:10px}
+.calendar-title{text-align:center;font-weight:900;font-size:18px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.weekday{text-align:center;font-size:11px;font-weight:900;color:var(--muted);padding:4px 0}
+.daycell{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:12px;min-height:58px;padding:7px 5px;text-align:left;position:relative}
+.daycell.other{opacity:.35}
+.daycell.today{outline:2px solid var(--accent)}
+.daycell.selected{background:var(--accent);color:var(--accentText)}
+.daynum{font-weight:900;font-size:14px}
+.count{font-size:10px;font-weight:850;margin-top:4px;opacity:.8}
+.dot{width:6px;height:6px;border-radius:999px;background:currentColor;position:absolute;right:6px;top:7px}
+.copyhint{margin-top:10px;font-size:12px;color:var(--muted)}
+
+@media(max-width:430px){.grid2{grid-template-columns:1fr}.actions .btn{flex:1 1 auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="brand">🚕 AjoLista 2.1</div>
+    <div class="top-actions">
+      <button class="iconbtn" onclick="openCalendar()">📅</button>
+      <button class="iconbtn" onclick="openSettings()">⚙️</button>
+    </div>
+  </div>
+  <div class="datebar">
+    <button class="navbtn" onclick="changeDay(-1)">‹</button>
+    <div class="datecenter">
+      <div class="dayname" id="dayName"></div>
+      <div class="fulldate" id="fullDate"></div>
+    </div>
+    <button class="navbtn" onclick="changeDay(1)">›</button>
+  </div>
+  <button class="todaybtn" onclick="goToday()">Tänään</button>
+</header>
+
+<main>
+  <div id="nextWrap" class="next-wrap"></div>
+  <div class="summary" id="summary"></div>
+  <div id="list"></div>
+</main>
+
+<button class="fab" onclick="openRideForm()">＋ LISÄÄ KYYTI</button>
+
+<div class="modal" id="rideModal">
+  <div class="sheet">
+    <h2 id="rideTitle">Uusi kyyti</h2>
+    <p class="help">Kyyti tallentuu valitulle päivälle ja järjestyy automaattisesti kellonajan mukaan.</p>
+    <input type="hidden" id="editId">
+    <div class="grid2">
+      <div><label>Kellonaika</label><input id="time" type="time"></div>
+      <div><label>Asiakas / kyydin nimi</label><input id="name" placeholder="Esim. Matti / Koulukyyti"></div>
+    </div>
+    <label>Lähtö</label><input id="from" placeholder="Esim. Ruokolahti">
+    <label>Määränpää</label><input id="to" placeholder="Esim. Imatra">
+    <label>Lisätiedot</label><textarea id="note" placeholder="Esim. Kela, apuväline, odotus, paluu..."></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeRideForm()">Peruuta</button>
+      <button class="btn primary" onclick="saveRide()">Tallenna</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="calendarModal">
+  <div class="sheet">
+    <h2 id="calendarModalTitle">Kalenteri</h2>
+    <p class="help" id="calendarHelp">Valitse päivä nähdäksesi sen ajot.</p>
+    <div class="calendar-head">
+      <button class="btn" onclick="changeCalendarMonth(-1)">‹</button>
+      <div class="calendar-title" id="calendarTitle"></div>
+      <button class="btn" onclick="changeCalendarMonth(1)">›</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <div class="copyhint" id="copyHint"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="calendarToday()">Tämä kuukausi</button>
+      <button class="btn primary" onclick="closeCalendar()">Sulje</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="sheet">
+    <h2>Asetukset</h2>
+    <div class="settings-grid">
+      <div class="setting-card">
+        <strong>🌙 Tumma tila</strong>
+        <div class="small">Sopii paremmin ilta- ja yöajoon.</div>
+        <button class="btn" style="margin-top:9px" onclick="toggleDark()">Vaihda tummaa tilaa</button>
+      </div>
+      <div class="setting-card">
+        <strong>💾 Varmuuskopioi ajot</strong>
+        <div class="small">Lataa kaikki ajot JSON-tiedostona iPhoneen.</div>
+        <button class="btn" style="margin-top:9px" onclick="exportData()">Lataa varmuuskopio</button>
+      </div>
+      <div class="setting-card">
+        <strong>📥 Palauta varmuuskopio</strong>
+        <div class="small">Valitse aiemmin tallennettu AjoLista-varmuuskopio.</div>
+        <input id="importFile" type="file" accept="application/json" onchange="importData(event)">
+      </div>
+      <div class="setting-card">
+        <strong>🗑️ Tyhjennä valittu päivä</strong>
+        <div class="small">Poistaa vain juuri nyt näkyvän päivän ajot.</div>
+        <button class="btn danger" style="margin-top:9px" onclick="clearSelectedDay()">Tyhjennä päivä</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" style="grid-column:1/-1" onclick="closeSettings()">Sulje</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY="ajolista-v2";
+const LEGACY_KEY="ajolista-v1";
+
+function localISO(d){
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+let selectedDate = localISO(new Date());
+let calendarCursor = dateObj(selectedDate);
+let copyModeRideId = null;
+
+function loadState(){
+  let state;
+  try{ state=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); }catch(e){}
+  if(!state) state={days:{},settings:{dark:false}};
+  if(!state.days) state.days={};
+  if(!state.settings) state.settings={dark:false};
+
+  try{
+    const legacy=JSON.parse(localStorage.getItem(LEGACY_KEY)||"[]");
+    if(Array.isArray(legacy) && legacy.length && Object.keys(state.days).length===0){
+      state.days[selectedDate]=legacy.map(r=>({...r, id:String(r.id||Date.now()+Math.random())}));
+      localStorage.removeItem(LEGACY_KEY);
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    }
+  }catch(e){}
+  return state;
+}
+let state=loadState();
+
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function dayRides(){return state.days[selectedDate]||[]}
+function setDayRides(r){state.days[selectedDate]=r;saveState()}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function $(id){return document.getElementById(id)}
+function dateObj(iso){
+  const [y,m,d]=iso.split("-").map(Number); return new Date(y,m-1,d);
+}
+
+function updateDateHeader(){
+  const d=dateObj(selectedDate), today=localISO(new Date());
+  let dn=d.toLocaleDateString("fi-FI",{weekday:"long"});
+  dn=dn.charAt(0).toUpperCase()+dn.slice(1);
+  if(selectedDate===today) dn="Tänään • "+dn;
+  $("dayName").textContent=dn;
+  $("fullDate").textContent=d.toLocaleDateString("fi-FI",{day:"numeric",month:"long",year:"numeric"});
+}
+function changeDay(delta){
+  const d=dateObj(selectedDate); d.setDate(d.getDate()+delta); selectedDate=localISO(d); render();
+}
+function goToday(){selectedDate=localISO(new Date());render()}
+
+function render(){
+  updateDateHeader();
+  let rides=[...dayRides()].sort((a,b)=>a.time.localeCompare(b.time));
+  if(JSON.stringify(rides)!==JSON.stringify(dayRides())) setDayRides(rides);
+
+  const open=rides.filter(r=>!r.done), done=rides.filter(r=>r.done);
+  $("summary").innerHTML=`<div class="pill">${rides.length} ajoa</div><div class="pill">${open.length} jäljellä</div><div class="pill">${done.length} ajettu</div>`;
+
+  if(open.length){
+    const r=open[0];
+    $("nextWrap").innerHTML=`<div class="label">Seuraava ajo</div>
+      <div class="next-card">
+        <div class="time">${r.time}</div>
+        <div class="name">${esc(r.name||"Kyyti")}</div>
+        <div class="route">${esc(r.from)} → ${esc(r.to)}</div>
+        ${r.note?`<div class="note">📝 ${esc(r.note)}</div>`:""}
+        <div class="actions"><button class="btn primary" onclick="toggleDone('${r.id}')">✓ Merkitse ajetuksi</button><button class="btn" onclick="editRide('${r.id}')">Muokkaa</button></div>
+      </div>`;
+  } else {
+    $("nextWrap").innerHTML="";
+  }
+
+  if(!rides.length){
+    $("list").innerHTML=`<div class="empty"><div class="emoji">🚕</div><h3>Ei ajoja tälle päivälle</h3><p>Lisää ensimmäinen kyyti alareunan painikkeesta.</p></div>`;
+    return;
+  }
+
+  let html="";
+  if(open.length){
+    html+=`<div class="section-title">Tulevat ajot</div>`;
+    html+=open.map(cardHTML).join("");
+  }
+  if(done.length){
+    html+=`<div class="section-title">Ajetut</div>`;
+    html+=done.map(cardHTML).join("");
+  }
+  $("list").innerHTML=html;
+}
+function cardHTML(r){
+  return `<div class="card ${r.done?"done-card":""}">
+    <div class="rowhead"><div><div class="time">${r.time}</div><div class="name">${esc(r.name||"Kyyti")}</div></div>${r.done?'<span class="badge" style="background:var(--goodBg);color:var(--good)">AJETTU</span>':""}</div>
+    <div class="route">${esc(r.from)} → ${esc(r.to)}</div>
+    ${r.note?`<div class="note">📝 ${esc(r.note)}</div>`:""}
+    <div class="actions">
+      <button class="btn ${r.done?"good":"primary"}" onclick="toggleDone('${r.id}')">${r.done?"↩ Palauta":"✓ Ajettu"}</button>
+      <button class="btn" onclick="editRide('${r.id}')">Muokkaa</button>
+      <button class="btn warn" onclick="makeReturn('${r.id}')">↔ Paluu</button>
+      <button class="btn" onclick="startCopyRide('${r.id}')">📅 Kopioi</button>
+      <button class="btn danger" onclick="removeRide('${r.id}')">Poista</button>
+    </div>
+  </div>`;
+}
+
+function openRideForm(id){
+  $("rideModal").style.display="flex";
+  $("editId").value=id||"";
+  $("rideTitle").textContent=id?"Muokkaa kyytiä":"Uusi kyyti";
+  const r=dayRides().find(x=>x.id===id);
+  ["time","name","from","to","note"].forEach(k=>$(k).value=r?(r[k]||""):"");
+}
+function closeRideForm(){$("rideModal").style.display="none"}
+function saveRide(){
+  const id=$("editId").value||`${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const old=dayRides().find(r=>r.id===id);
+  const r={id,time:$("time").value,name:$("name").value.trim(),from:$("from").value.trim(),to:$("to").value.trim(),note:$("note").value.trim(),done:old?old.done:false};
+  if(!r.time){alert("Anna kellonaika.");return}
+  if(!r.from||!r.to){alert("Anna lähtö ja määränpää.");return}
+  let list=dayRides();
+  list=old?list.map(x=>x.id===id?r:x):[...list,r];
+  setDayRides(list); closeRideForm(); render();
+}
+function editRide(id){openRideForm(id)}
+function toggleDone(id){setDayRides(dayRides().map(r=>r.id===id?{...r,done:!r.done}:r));render()}
+function removeRide(id){if(confirm("Poistetaanko tämä ajo?")){setDayRides(dayRides().filter(r=>r.id!==id));render()}}
+
+function makeReturn(id){
+  const r=dayRides().find(x=>x.id===id); if(!r)return;
+  const time=prompt("Paluukyydin kellonaika (HH:MM)",r.time||"");
+  if(time===null)return;
+  const ret={id:`${Date.now()}-${Math.random().toString(16).slice(2)}`,time,name:(r.name||"Kyyti")+" – paluu",from:r.to,to:r.from,note:r.note||"",done:false};
+  setDayRides([...dayRides(),ret]);render();
+}
+
+/* Kalenteri */
+function openCalendar(){
+  copyModeRideId=null;
+  calendarCursor=dateObj(selectedDate);
+  $("calendarModalTitle").textContent="Kalenteri";
+  $("calendarHelp").textContent="Valitse päivä nähdäksesi sen ajot.";
+  $("copyHint").textContent="";
+  $("calendarModal").style.display="flex";
+  renderCalendar();
+}
+function closeCalendar(){
+  $("calendarModal").style.display="none";
+  copyModeRideId=null;
+}
+function changeCalendarMonth(delta){
+  calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+delta,1);
+  renderCalendar();
+}
+function calendarToday(){
+  calendarCursor=new Date();
+  renderCalendar();
+}
+function monthName(d){
+  let s=d.toLocaleDateString("fi-FI",{month:"long",year:"numeric"});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+function renderCalendar(){
+  $("calendarTitle").textContent=monthName(calendarCursor);
+  const grid=$("calendarGrid");
+  const weekdays=["MA","TI","KE","TO","PE","LA","SU"];
+  let html=weekdays.map(w=>`<div class="weekday">${w}</div>`).join("");
+
+  const y=calendarCursor.getFullYear(), m=calendarCursor.getMonth();
+  const first=new Date(y,m,1);
+  let offset=(first.getDay()+6)%7;
+  const start=new Date(y,m,1-offset);
+  const today=localISO(new Date());
+
+  for(let i=0;i<42;i++){
+    const d=new Date(start); d.setDate(start.getDate()+i);
+    const iso=localISO(d);
+    const count=(state.days[iso]||[]).length;
+    const classes=["daycell"];
+    if(d.getMonth()!==m) classes.push("other");
+    if(iso===today) classes.push("today");
+    if(iso===selectedDate && !copyModeRideId) classes.push("selected");
+    html+=`<button class="${classes.join(" ")}" onclick="selectCalendarDate('${iso}')">
+      <div class="daynum">${d.getDate()}</div>
+      ${count?`<div class="count">${count} ajo${count===1?"":"a"}</div><span class="dot"></span>`:""}
+    </button>`;
+  }
+  grid.innerHTML=html;
+}
+function selectCalendarDate(iso){
+  if(copyModeRideId){
+    const sourceList=dayRides();
+    const r=sourceList.find(x=>x.id===copyModeRideId);
+    if(!r){closeCalendar();return}
+    const copy={...r,id:`${Date.now()}-${Math.random().toString(16).slice(2)}`,done:false};
+    state.days[iso]=[...(state.days[iso]||[]),copy];
+    saveState();
+    closeCalendar();
+    alert("Kyyti kopioitu päivälle "+dateObj(iso).toLocaleDateString("fi-FI"));
+    return;
+  }
+  selectedDate=iso;
+  closeCalendar();
+  render();
+}
+function startCopyRide(id){
+  copyModeRideId=id;
+  calendarCursor=dateObj(selectedDate);
+  $("calendarModalTitle").textContent="Kopioi kyyti";
+  $("calendarHelp").textContent="Valitse kalenterista päivä, jolle haluat kopioida kyydin.";
+  const r=dayRides().find(x=>x.id===id);
+  $("copyHint").textContent=r?`${r.time} • ${r.name||"Kyyti"} • ${r.from} → ${r.to}`:"";
+  $("calendarModal").style.display="flex";
+  renderCalendar();
+}
+
+function openSettings(){$("settingsModal").style.display="flex"}
+function closeSettings(){$("settingsModal").style.display="none"}
+function toggleDark(){
+  state.settings.dark=!state.settings.dark;saveState();applyTheme();
+}
+function applyTheme(){document.body.classList.toggle("dark",!!state.settings.dark)}
+function clearSelectedDay(){
+  if(confirm("Poistetaanko kaikki valitun päivän ajot?")){
+    delete state.days[selectedDate];saveState();closeSettings();render();
+  }
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`AjoLista-varmuuskopio-${localISO(new Date())}.json`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function importData(ev){
+  const file=ev.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const imported=JSON.parse(reader.result);
+      if(!imported || typeof imported!=="object" || !imported.days) throw new Error();
+      if(confirm("Korvataanko nykyiset AjoLista-tiedot tällä varmuuskopiolla?")){
+        state=imported; if(!state.settings)state.settings={dark:false}; saveState();applyTheme();render();alert("Varmuuskopio palautettu.");
+      }
+    }catch(e){alert("Tiedosto ei ole kelvollinen AjoLista-varmuuskopio.");}
+    ev.target.value="";
+  };
+  reader.readAsText(file);
+}
+
+applyTheme();
+render();
+</script>
+</body>
+</html>
