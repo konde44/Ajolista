@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>AjoLista</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:#111827;color:white;padding:18px 16px}.head{display:flex;justify-content:space-between;align-items:center}.title{font-size:25px;font-weight:800}.date{font-size:14px;color:#d1d5db;margin-top:3px}
+main{max-width:650px;margin:auto;padding:14px 12px 95px}.summary{font-size:13px;font-weight:800;color:#6b7280;text-transform:uppercase;margin:8px 4px}
+.card{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:10px}.card.next{border:2px solid #111827}
+.time{font-size:25px;font-weight:800}.name{font-size:17px;font-weight:700;margin-top:3px}.route{margin-top:5px;color:#374151}.note{font-size:14px;color:#6b7280;margin-top:7px}
+.actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}.btn{border:0;border-radius:11px;padding:10px 12px;font-weight:700;background:#e5e7eb;color:#111827}.primary{background:#111827;color:white}.done{background:#dcfce7;color:#166534}
+.fab{position:fixed;left:12px;right:12px;bottom:14px;max-width:626px;margin:auto;border:0;border-radius:15px;padding:16px;background:#111827;color:white;font-size:17px;font-weight:800;box-shadow:0 5px 20px #0003}
+.empty{text-align:center;color:#6b7280;padding:45px 20px}.modal{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end;z-index:5}.sheet{background:white;border-radius:22px 22px 0 0;width:100%;max-width:650px;margin:auto;padding:20px 16px 30px}
+label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}input,textarea{width:100%;padding:13px;border:1px solid #d1d5db;border-radius:11px;font:inherit}.row{display:flex;gap:10px}.row>div{flex:1}.modal-actions{display:flex;gap:8px;margin-top:18px}.modal-actions button{flex:1;padding:14px;border:0;border-radius:12px;font-weight:800}.cancel{background:#e5e7eb}.save{background:#111827;color:white}
+</style>
+</head>
+<body>
+<header><div class="head"><div><div class="title">🚕 AjoLista</div><div class="date" id="date"></div></div><button class="btn" onclick="clearDay()">Tyhjä päivä</button></div></header>
+<main><div class="summary" id="summary"></div><div id="list"></div></main>
+<button class="fab" onclick="openForm()">＋ LISÄÄ KYYTI</button>
+<div class="modal" id="modal"><div class="sheet">
+<h2 id="formTitle">Uusi kyyti</h2><input type="hidden" id="editId">
+<div class="row"><div><label>Kellonaika</label><input id="time" type="time"></div><div><label>Asiakas / kyyti</label><input id="name" placeholder="Esim. Matti"></div></div>
+<label>Lähtö</label><input id="from" placeholder="Esim. Ruokolahti">
+<label>Määränpää</label><input id="to" placeholder="Esim. Imatra">
+<label>Lisätiedot</label><textarea id="note" placeholder="Esim. Kela, paluu 12:00..."></textarea>
+<div class="modal-actions"><button class="cancel" onclick="closeForm()">Peruuta</button><button class="save" onclick="saveRide()">Tallenna</button></div>
+</div></div>
+<script>
+const KEY="ajolista-v1";let rides=JSON.parse(localStorage.getItem(KEY)||"[]");
+const $=id=>document.getElementById(id);
+$("date").textContent=new Date().toLocaleDateString("fi-FI",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+function persist(){localStorage.setItem(KEY,JSON.stringify(rides))}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function render(){rides.sort((a,b)=>a.time.localeCompare(b.time));let next=rides.findIndex(r=>!r.done);$("summary").textContent=`${rides.length} ajoa • ${rides.filter(r=>r.done).length} ajettu`;
+$("list").innerHTML=rides.length?rides.map((r,i)=>`<div class="card ${i===next?"next":""}" style="${r.done?"opacity:.55":""}"><div class="time">${r.time}</div><div class="name">${esc(r.name||"Kyyti")}</div><div class="route">${esc(r.from)} → ${esc(r.to)}</div>${r.note?`<div class="note">📝 ${esc(r.note)}</div>`:""}<div class="actions"><button class="btn ${r.done?"done":"primary"}" onclick="toggleDone('${r.id}')">${r.done?"✓ AJETTU":"✓ Merkitse ajetuksi"}</button><button class="btn" onclick="editRide('${r.id}')">Muokkaa</button><button class="btn" onclick="removeRide('${r.id}')">Poista</button></div></div>`).join(""):'<div class="empty"><div style="font-size:42px">🚕</div><h3>Ei vielä ajoja</h3><p>Lisää päivän ensimmäinen kyyti.</p></div>'}
+function openForm(id){$("modal").style.display="flex";$("editId").value=id||"";$("formTitle").textContent=id?"Muokkaa kyytiä":"Uusi kyyti";let r=rides.find(x=>x.id===id);["time","name","from","to","note"].forEach(k=>$(k).value=r?r[k]||"": "");}
+function closeForm(){$("modal").style.display="none"}
+function saveRide(){let id=$("editId").value||Date.now().toString(),old=rides.find(r=>r.id===id);let r={id,time:$("time").value,name:$("name").value.trim(),from:$("from").value.trim(),to:$("to").value.trim(),note:$("note").value.trim(),done:old?old.done:false};if(!r.time||!r.from||!r.to){alert("Täytä kellonaika, lähtö ja määränpää.");return}if(old)rides=rides.map(x=>x.id===id?r:x);else rides.push(r);persist();closeForm();render()}
+function editRide(id){openForm(id)}function removeRide(id){if(confirm("Poistetaanko ajo?")){rides=rides.filter(r=>r.id!==id);persist();render()}}
+function toggleDone(id){rides=rides.map(r=>r.id===id?{...r,done:!r.done}:r);persist();render()}
+function clearDay(){if(confirm("Tyhjennetäänkö tämän päivän lista?")){rides=[];persist();render()}}
+render();
+</script>
+</body></html>
